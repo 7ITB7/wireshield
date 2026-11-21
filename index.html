@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="icon" href="data:,"><title>Wire Shield — check wire instructions before money moves</title>
+<style>
+/* WIRE SHIELD — "bank vault" style: dark steel, brass, red/green verdict lamps */
+:root{--bg:#14171c;--p:#1e232b;--l:#39414d;--fg:#eef1f5;--f2:#a3acb9;--brass:#c9a24a;--red:#e5484d;--yel:#f0b429;--grn:#3fb950}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 -apple-system,Segoe UI,Roboto,sans-serif}
+header{padding:14px;border-bottom:3px solid var(--brass);background:#0f1216}
+h1{margin:0;font:800 22px/1 Georgia,serif;letter-spacing:.06em;color:var(--brass)}
+.sub{font-size:12px;color:var(--f2);margin-top:4px}
+main{max-width:760px;margin:0 auto;padding:12px}
+h2{font:700 13px/1 sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--brass);margin:20px 0 8px}
+label{display:block;font-size:12px;font-weight:700;color:var(--f2);margin:10px 0 3px;text-transform:uppercase;letter-spacing:.06em}
+textarea,input{width:100%;min-height:44px;background:#0f1216;color:var(--fg);border:1px solid var(--l);border-radius:6px;padding:9px;font:14px/1.4 ui-monospace,Menlo,monospace}
+textarea{min-height:150px}
+.btn{min-height:46px;border:0;border-radius:6px;background:var(--brass);color:#111;font-weight:800;padding:10px 16px;cursor:pointer;font-size:15px}
+.btn.g{background:transparent;color:var(--fg);border:1px solid var(--l)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.lamp{display:flex;gap:12px;align-items:center;padding:14px;border-radius:8px;margin:14px 0;border:2px solid}
+.lamp b{font-size:22px}.lamp.r{border-color:var(--red);background:#2a1214}.lamp.y{border-color:var(--yel);background:#2a2210}.lamp.g{border-color:var(--grn);background:#10241a}
+.dot{width:26px;height:26px;border-radius:50%;flex:none}.r .dot{background:var(--red);box-shadow:0 0 14px var(--red)}.y .dot{background:var(--yel);box-shadow:0 0 14px var(--yel)}.g .dot{background:var(--grn);box-shadow:0 0 14px var(--grn)}
+.f{background:var(--p);border-left:5px solid var(--l);border-radius:5px;padding:9px 11px;margin:7px 0;font-size:14px}
+.f.r{border-color:var(--red)}.f.y{border-color:var(--yel)}.f.g{border-color:var(--grn)}
+.f b{display:block}.muted{color:var(--f2);font-size:13px}
+.note{background:var(--p);border:1px solid var(--l);border-radius:6px;padding:10px;font-size:13.5px;margin:10px 0}
+.item{display:flex;justify-content:space-between;gap:8px;background:var(--p);padding:8px 10px;border-radius:5px;margin:5px 0;font:13px ui-monospace,monospace}
+.item button{background:none;border:0;color:var(--red);cursor:pointer;font-size:16px}
+@media print{header,.noprint{display:none!important}body{background:#fff;color:#000}.f,.lamp{background:#fff!important;color:#000}}
+</style></head><body>
+<header><h1>WIRE SHIELD</h1><div class="sub">Check wire and payoff instructions for fraud before any money moves</div></header>
+<main>
+<div class="note noprint"><b>The one rule that stops wire fraud:</b> before any wire, call the sender at a phone number you already had, never one from the email, and read back the account details. This tool flags warning signs; the call is what confirms.</div>
+<h2>1 · Paste the email</h2>
+<label>Full email, headers included if you can (Gmail: ⋮ → Show original. Outlook: View message source)</label>
+<textarea id="em" placeholder="From: ...&#10;Reply-To: ...&#10;Subject: Updated wire instructions&#10;&#10;Please wire the funds to our new account..."></textarea>
+<h2>2 · Known-good details (saved on this device only)</h2>
+<label>Trusted domains, one per line (the real firms, lenders, title companies)</label>
+<textarea id="trust" style="min-height:80px" placeholder="smithlawct.com&#10;firsttitle.com"></textarea>
+<label>Known-good account numbers for this deal (optional, one per line)</label>
+<textarea id="accts" style="min-height:60px" placeholder="last 4 is fine, e.g. 4417"></textarea>
+<div class="row noprint"><button class="btn" id="go">Check it</button><button class="btn g" id="clr">Clear email</button></div>
+<div id="out"></div>
+<div class="row noprint" id="acts" hidden><button class="btn g" id="pr">Print / save report</button><button class="btn g" id="cp">Copy report</button></div>
+<h2>Check log</h2><div id="log" class="muted"></div>
+</main>
+<script>
+'use strict';
+const $=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const st={g(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},s(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+$('#trust').value=st.g('ws.trust','');$('#accts').value=st.g('ws.accts','');
+$('#trust').oninput=e=>st.s('ws.trust',e.target.value);$('#accts').oninput=e=>st.s('ws.accts',e.target.value);
+$('#clr').onclick=()=>{$('#em').value='';$('#out').innerHTML='';$('#acts').hidden=true};
+const FREE=/^(gmail|googlemail|yahoo|ymail|outlook|hotmail|live|msn|aol|icloud|me|mac|proton|protonmail|pm|gmx|mail|zoho|yandex|comcast|verizon|att|sbcglobal|cox|charter|optonline)\.(com|net|me|ch)$/i;
+const URG=/\b(urgent|immediately|asap|today only|right away|time.?sensitive|before (noon|end of day)|do not call|don'?t call|can'?t talk|in a meeting|new (bank|account)|changed? (bank|account|wire)|updated (wire|bank|payment) (instructions|details)|account (is )?(under )?(audit|review)|use (this|the) (new|following) account|previous (account|instructions) (is|are) (no longer|invalid)|confidential)\b/gi;
+function fetchT(u,ms){const c=new AbortController(),t=setTimeout(()=>c.abort(),ms||12000);return fetch(u,{signal:c.signal}).finally(()=>clearTimeout(t))}
+async function dns(n,t){const j=await (await fetchT('https://dns.google/resolve?name='+encodeURIComponent(n)+'&type='+t)).json();return (j.Answer||[]).map(a=>String(a.data).replace(/"/g,''))}
+let boot=null;async function rdap(d){try{if(!boot)boot=await (await fetchT('https://data.iana.org/rdap/dns.json')).json();const tld=d.split('.').pop();let u=null;for(const [ts,us] of boot.services)if(ts.includes(tld))u=us[0].replace(/\/?$/,'/')+'domain/'+d;if(!u)return null;const r=await fetchT(u);if(r.status===404)return {nf:true};const j=await r.json();const ev=k=>(j.events||[]).find(e=>e.eventAction===k);return {reg:ev('registration')&&ev('registration').eventDate}}catch(e){return null}}
+const base=h=>{const p=h.toLowerCase().replace(/^www\./,'').split('.');return p.length>2&&/^(co|com|org|net)\.[a-z]{2}$/.test(p.slice(-2).join('.'))?p.slice(-3).join('.'):p.slice(-2).join('.')};
+function lev(a,b){const m=[...Array(b.length+1).keys()];for(let i=1;i<=a.length;i++){let p=m[0];m[0]=i;for(let j=1;j<=b.length;j++){const t=m[j];m[j]=Math.min(m[j]+1,m[j-1]+1,p+(a[i-1]===b[j-1]?0:1));p=t}}return m[b.length]}
+const norm=s=>s.replace(/rn/g,'m').replace(/vv/g,'w').replace(/[0o]/g,'o').replace(/[1il|]/g,'l').replace(/5/g,'s').replace(/-/g,'');
+function aba(n){if(!/^\d{9}$/.test(n))return false;const d=n.split('').map(Number);return (3*(d[0]+d[3]+d[6])+7*(d[1]+d[4]+d[7])+(d[2]+d[5]+d[8]))%10===0}
+const hdr=(t,k)=>{const m=t.match(new RegExp('^'+k+':\\s*(.+)$','im'));return m?m[1].trim():''};
+const addr=s=>{const m=(s||'').match(/[\w.+-]+@([\w-]+\.)+[\w-]+/);return m?m[0].toLowerCase():''};
+let F=[],report='';
+function add(sev,t,d){F.push({sev,t,d})}
+$('#go').onclick=async()=>{const t=$('#em').value;if(t.trim().length<10){alert('Paste the email first');return}
+ F=[];$('#out').innerHTML='<div class="note">Checking…</div>';
+ const trust=$('#trust').value.split(/\s+/).map(x=>x.trim().toLowerCase().replace(/^@/,'')).filter(Boolean).map(base);
+ const known=$('#accts').value.split(/\s+/).map(x=>x.replace(/\D/g,'')).filter(Boolean);
+ const from=addr(hdr(t,'From')),reply=addr(hdr(t,'Reply-To')),ret=addr(hdr(t,'Return-Path'));
+ const all=[...new Set((t.match(/[\w.+-]+@(?:[\w-]+\.)+[a-z]{2,}/gi)||[]).map(x=>x.toLowerCase()))];
+ const doms=[...new Set(all.map(a=>base(a.split('@')[1])))];
+ const links=[...new Set((t.match(/https?:\/\/[^\s"'<>)]+/gi)||[]).map(u=>{try{return base(new URL(u).hostname)}catch(e){return ''}}).filter(Boolean))];
+ const sender=from||all[0]||'';const sd=sender?base(sender.split('@')[1]):'';
+ if(!sender)add(2,'No sender address found','Paste the full email including the From: line, ideally the full headers.');
+ if(reply&&from&&base(reply.split('@')[1])!==base(from.split('@')[1]))add(3,'Replies go to a different domain','The email says it is from '+from+' but replies go to '+reply+'. This is a classic wire-fraud trick: you think you are writing to the firm, but the criminal gets the reply.');
+ if(ret&&from&&base(ret.split('@')[1])!==base(from.split('@')[1]))add(2,'Sent through a different domain','Return-Path is '+ret+', which does not match the From address. This can be normal with mailing services, but confirm by phone.');
+ const auth=(t.match(/Authentication-Results:[\s\S]{0,600}/i)||[''])[0];
+ if(/dmarc=fail/i.test(auth))add(3,'DMARC failed','The receiving mail server says this email failed DMARC, a strong sign the sender address is forged.');
+ else if(/spf=(fail|softfail)/i.test(auth))add(2,'SPF failed','The receiving mail server says this email was not sent from a server the domain authorizes.');
+ else if(/dmarc=pass/i.test(auth))add(1,'DMARC passed','The domain the email claims to be from did send it. Fraud can still come from a hacked real account, so still call.');
+ for(const d of [...new Set([...doms,...links])]){
+  if(FREE.test(d)&&d===sd)add(3,'Sent from a free email account','Instructions came from '+sender+'. Law firms, lenders and title companies almost never send wire instructions from free email accounts.');
+  if(trust.length&&!trust.includes(d)&&!FREE.test(d)){const close=trust.find(k=>lev(norm(d.split('.')[0]),norm(k.split('.')[0]))<=2||norm(d)===norm(k)||(d.split('.')[0]===k.split('.')[0]&&d!==k));if(close)add(3,'Lookalike domain: '+d,'This looks almost like your trusted domain '+close+' but it is not the same. Criminals register near-copies like these to impersonate firms.')}
+ }
+ if(trust.length&&sd&&!trust.includes(sd)&&!F.some(f=>/Lookalike/.test(f.t)&&f.t.includes(sd)))add(2,'Sender not on your trusted list',sd+' is not one of your trusted domains. That may be fine for a new party, but verify by phone.');
+ if(trust.length&&sd&&trust.includes(sd))add(1,'Sender domain is on your trusted list',sd+' matches a trusted domain. A real account can still be hacked, so still call.');
+ const chk=[...new Set([sd,...(reply?[base(reply.split('@')[1])]:[]),...links])].filter(d=>d&&!FREE.test(d)).slice(0,5);
+ await Promise.all(chk.map(async d=>{const r=await rdap(d);if(r&&r.nf)add(3,d+' is not a registered domain','It does not exist in the domain registry, so the address is fake or the domain has been dropped.');else if(r&&r.reg){const days=Math.floor((Date.now()-new Date(r.reg))/864e5);if(days<90)add(3,d+' was registered '+days+' days ago','Brand-new domains are a top sign of wire fraud. Real firms have had their domains for years.');else if(days<365)add(2,d+' is under a year old','Registered '+new Date(r.reg).toLocaleDateString()+'. Be cautious.');else add(1,d+' is '+Math.floor(days/365)+'+ years old','Registered '+new Date(r.reg).toLocaleDateString()+'.')}
+  try{const dm=await dns('_dmarc.'+d,'TXT');if(!dm.some(x=>/v=DMARC1/i.test(x)))add(2,d+' has no DMARC protection','Anyone can send email pretending to be '+d+'. Forged emails from this domain may not be caught.')}catch(e){}}));
+ const u=t.match(URG);if(u)add(u.length>2?3:2,'Pressure or change language','Phrases found: '+[...new Set(u.map(x=>x.toLowerCase()))].join(', ')+'. Last-minute changes and urgency are how wire fraud works.');
+ const ab=[...new Set((t.match(/\b\d{9}\b/g)||[]).filter(aba))];
+ const acc=[...new Set((t.match(/\b(?:acct|account|a\/c)[^\d]{0,25}(\d{6,17})\b/gi)||[]).map(x=>x.replace(/\D/g,'').slice(-17)))];
+ if(ab.length)add(1,'Routing number found: '+ab.join(', '),'Valid format. Confirm which bank it belongs to by looking it up yourself, and that it matches the bank the firm has always used.');
+ for(const a of acc){if(known.length){const ok=known.some(k=>a.endsWith(k));add(ok?1:3,ok?'Account matches your known-good list':'Account number does NOT match your known-good list','Account ending '+a.slice(-4)+(ok?' matches what you saved.':' differs from the account(s) you saved for this deal. Treat as fraud until confirmed by phone.'))}}
+ const max=Math.max(0,...F.map(f=>f.sev));const reds=F.filter(f=>f.sev===3).length;
+ const lv=max===3?['r','HIGH RISK — do not send money','Call the sender at a number you already had before doing anything.']:max===2?['y','CAUTION — verify by phone','Some warning signs. Confirm by phone at a known number.']:['g','No red flags found','Still confirm by phone at a known number. Real accounts get hacked.'];
+ F.sort((a,b)=>b.sev-a.sev);
+ $('#out').innerHTML='<div class="lamp '+lv[0]+'"><span class="dot"></span><div><b>'+lv[1]+'</b><div class="muted">'+lv[2]+'</div></div></div>'+F.map(f=>'<div class="f '+(f.sev===3?'r':f.sev===2?'y':'g')+'"><b>'+esc(f.t)+'</b>'+esc(f.d)+'</div>').join('')+'<div class="muted">Checked '+new Date().toLocaleString()+(sender?' · sender '+esc(sender):'')+'</div>';
+ $('#acts').hidden=false;
+ report='WIRE SHIELD REPORT — '+new Date().toLocaleString()+'\nSender: '+(sender||'?')+'\nVerdict: '+lv[1]+'\n\n'+F.map(f=>'['+(f.sev===3?'RED':f.sev===2?'CAUTION':'OK')+'] '+f.t+'\n  '+f.d).join('\n')+'\n\nAlways confirm wire instructions by calling a phone number you already had.';
+ const L=st.g('ws.log',[]);L.unshift({at:new Date().toISOString(),s:sender,v:lv[1],r:reds});st.s('ws.log',L.slice(0,50));drawLog()};
+function drawLog(){$('#log').innerHTML=st.g('ws.log',[]).map(x=>'<div class="item"><span>'+esc(new Date(x.at).toLocaleString())+' · '+esc(x.s||'?')+'</span><span>'+esc(x.v.split(' —')[0])+'</span></div>').join('')||'No checks yet.'}
+$('#pr').onclick=()=>print();$('#cp').onclick=()=>{navigator.clipboard.writeText(report).then(()=>alert('Copied'),()=>alert('Copy failed'))};
+drawLog();
+</script></body></html>
